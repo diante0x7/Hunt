@@ -63,5 +63,5 @@ Project available at https://github.com/diante0x7/Hunt
 def get_uptime(start_time, current_time):
     td = current_time - start_time
     return "Hunt has been running for {} days, {} hours, {} minutes, and {} seconds.".format(
-        td.days, td.seconds//3600, td.seconds//60, td.seconds % 60
+        td.days, td.seconds//3600, (td.seconds//60) % 60, td.seconds % 60
     )
