@@ -32,5 +32,5 @@ chmod +x /usr/local/bin/hunt
 echo "Done."
 
 sleep 1
-echo "Installation Complete! Running 'hunt --install' so you can finish your configuration."
-hunt --install
+echo "Installation Complete! Running 'hunt --configure' so you can finish your configuration."
+hunt --configure
