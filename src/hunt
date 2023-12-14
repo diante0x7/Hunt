@@ -1,0 +1,159 @@
+#!/usr/bin/env python3
+
+import argparse
+import discord
+import asyncio
+import pwnatlas
+from datetime import datetime
+from discord import app_commands
+import util.config as configure
+from util.cve import print_cve
+from util.shellcraft import python_rev, nc_rev, php_rev, bash_rev
+
+# pre-application setup
+parser = argparse.ArgumentParser(
+                    prog='hunt',
+                    description='CougarCS InfoSec Helper Bot',
+                    epilog='hunt - developed by diante jackson')
+
+parser.add_argument('--configure', help='Set up your discord bot\'s configuration', action='store_true')
+parser.add_argument('--config', help='Print the bots current configuration', action='store_true')
+parser.add_argument('--version', help='Print version information', action='version', version='%(prog)s 0.1')
+args = parser.parse_args()
+
+# install configuration
+if args.configure:
+    print("Hunt Installer")
+    print("-------------------------------------------")
+    discord_token = input('input your discord token\nhunt> ')
+    upcoming_channel = input('\ninput the channel id for ctftime updates\nhunt> ')
+    configure.create_config(discord_token, upcoming_channel)
+    exit(0)
+
+# parse config and if not found, exit
+config = configure.parse_config()
+if config == False:
+    print("Error parsing config file. Please reinstall using {} --install.".format(parser.prog))
+    exit(-1)
+
+# print configuration details
+if args.config:
+    print("""
+Current Configuration:
+          Discord Token: {}
+          Upcoming CTF Channel ID: {}
+          """.format(config['token'], config['upcoming']))
+    exit(0)
+
+# start discord environment
+# setting up discord env
+intents = discord.Intents.default()
+intents.message_content = True
+
+client = discord.Client(intents=intents)
+tree = app_commands.CommandTree(client)
+
+blue = discord.Colour.blue()
+gold = discord.Colour.dark_gold()
+red = discord.Colour.red()
+pfp = discord.File("assets/hunt.png", filename="image.png")
+
+# client functions
+@client.event
+async def on_ready():
+    await tree.sync()
+    print('We have logged in as {}'.format(client.user.name))
+
+@client.event
+async def on_message(message):
+    if message.author == client.user:
+        return
+
+    if message.content.startswith('$hello'):
+        await message.channel.send('Hello <@{}>! Hack The Planet! <:infosec:1159657773605326888>'.format(message.author.id))
+        return 0
+
+
+# cve module
+@tree.command(name = "cvesearch", description="Search for CVE by Keywords")
+async def submit_room(interaction: discord.Interaction, keywords: str):
+    try:
+        cve = pwnatlas.get.by_keyword(keywords)
+    except:
+        cve = False
+    if cve == False:
+        emb = discord.Embed(title="CVE Search", color=red)
+        emb.add_field(name="Keywords: " + keywords, value="CVE Search Failed... Please try again.", inline=False)
+        await interaction.response.send_message(embed=emb)
+        return -1
+    emb = discord.Embed(title="CVE Search", color=blue)
+    emb.add_field(name="Keywords: " + keywords, value=print_cve(cve), inline=False)
+    await interaction.response.send_message(embed=emb)
+    return 0
+
+@tree.command(name = "cveinfo", description="Prints CVE Information for a given CVE-ID.")
+async def submit_room(interaction: discord.Interaction, cve_id: str):
+    try:
+        cve = pwnatlas.get.by_id(cve_id)
+    except:
+        cve = False
+    if cve == False:
+        emb = discord.Embed(title="CVE Info", description="Information about a specific CVE", color=red)
+        emb.add_field(name="CVE-ID: " + cve_id, value="CVE Search Failed... Please try again.", inline=False)
+        await interaction.response.send_message(embed=emb)
+        return -1
+    emb = discord.Embed(title="CVE Info", description="Information about a specific CVE", color=blue)
+    emb.add_field(name="CVE-ID: " + cve_id, value=print_cve(cve), inline=False)
+    await interaction.response.send_message(embed=emb)
+    return 0
+
+# shellcraft modules
+@tree.command(name = "bash_reverse_shell", description="Cheatsheet: Bash Reverse Shell Template")
+async def submit_room(interaction: discord.Interaction, lhost:str, lport:int):
+    emb = discord.Embed(title="Shellcraft", description="Hunt's Reverse Shell Crafter", color=blue)
+    emb.add_field(name='Bash Reverse Shell One-Liner', value=bash_rev(lhost, lport), inline=False)
+    await interaction.response.send_message(embed=emb)
+    return 0
+@tree.command(name = "python_reverse_shell", description="Cheatsheet: Python Reverse Shell Template")
+async def submit_room(interaction: discord.Interaction, lhost:str, lport:int):
+    emb = discord.Embed(title="Shellcraft", description="Hunt's Reverse Shell Crafter", color=blue)
+    emb.add_field(name='Python Reverse Shell One-Liner', value=python_rev(lhost, lport), inline=False)
+    await interaction.response.send_message(embed=emb)
+    return 0
+@tree.command(name = "nc_reverse_shell", description="Cheatsheet: NetCat Reverse Shell Template")
+async def submit_room(interaction: discord.Interaction, lhost:str, lport:int):
+    emb = discord.Embed(title="Shellcraft", description="Hunt's Reverse Shell Crafter", color=blue)
+    emb.add_field(name='NetCat Reverse Shell One-Liner', value=nc_rev(lhost, lport), inline=False)
+    await interaction.response.send_message(embed=emb)
+    return 0
+@tree.command(name = "php_reverse_shell", description="Cheatsheet: PHP Reverse Shell Template")
+async def submit_room(interaction: discord.Interaction, lhost:str, lport:int):
+    emb = discord.Embed(title="Shellcraft", description="Hunt's Reverse Shell Crafter", color=blue)
+    emb.add_field(name='PHP Reverse Shell One-Liner', value=php_rev(lhost, lport), inline=False)
+    await interaction.response.send_message(embed=emb)
+    return 0
+
+# help & whoami
+@tree.command(name = "whoami", description="Hunt's Help and About Me")
+async def submit_room(interaction: discord.Interaction):
+    emb = discord.Embed(title="/whoami", url='https://github.com/diante0x7/Hunt', description="More About Hunt", color=gold)
+    emb.add_field(name='About Me', value=configure.about_me()[0], inline=False)
+    emb.add_field(name='Shellcraft', value=configure.about_me()[1], inline=False)
+    emb.add_field(name='CVE Search Tool', value=configure.about_me()[2], inline=False)
+    emb.add_field(name='CTFTime Upcoming Events', value=configure.about_me()[3], inline=False)
+    emb.add_field(name='Project Page', value=configure.about_me()[4], inline=False)
+    await interaction.response.send_message(embed=emb)
+    return 0
+@tree.command(name = "uptime", description="View Hunt's Uptime")
+async def submit_room(interaction: discord.Interaction):
+    emb = discord.Embed(title="Uptime", color=gold)
+    emb.add_field(name='Current Uptime', value=configure.get_uptime(start_time, datetime.now()), inline=False)
+    await interaction.response.send_message(embed=emb)
+    return 0
+
+if __name__ == '__main__':
+    try:
+        start_time = datetime.now()
+        client.run(config['token'])
+    except:
+        print('Your token is invalid. Please reinstall your configuration file using using {} --install.'.format(parser.prog))
