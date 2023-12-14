@@ -56,7 +56,6 @@ tree = app_commands.CommandTree(client)
 blue = discord.Colour.blue()
 gold = discord.Colour.dark_gold()
 red = discord.Colour.red()
-pfp = discord.File("assets/hunt.png", filename="image.png")
 
 # client functions
 @client.event
