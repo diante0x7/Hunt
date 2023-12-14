@@ -1,8 +1,10 @@
+#!/bin/bash
+
 echo "Hunt Installer Script"
 echo '-------------------------------------------'
 echo
 
-if [ "$EUID" -ne 0]
+if [ "$EUID" -ne 0 ]
     then echo "Not running as root. Please use sudo and try again."
     exit
 fi
@@ -26,6 +28,7 @@ echo "Done."
 sleep 1
 echo "Creating symbolic link to application for \$PATH..."
 ln -s /usr/local/src/Hunt/hunt /usr/local/bin/hunt
+chmod +x /usr/local/bin/hunt
 echo "Done."
 
 sleep 1
